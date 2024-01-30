@@ -12,5 +12,6 @@ public class Window extends JFrame {
         setUndecorated(true);
 
         setContentPane(new GameView());
+
     }
 }

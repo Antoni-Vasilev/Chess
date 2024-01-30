@@ -17,12 +17,13 @@ import static eu.Box.BoxTeam.*;
 public abstract class Box {
 
     protected BoxColor color;
-    protected BoxTeam team;
-    protected boolean isHover = false;
+    public BoxTeam team;
+    public boolean isHover = false;
     protected boolean isPressed = false;
     public boolean isCanMove = false;
     protected boolean isFirstMove = true;
-    private static Box[] outList = new Box[0];
+    public static List<Box> outList = new ArrayList<>();
+    public static Point canChange = null;
 
     public Box() {
 
@@ -35,6 +36,14 @@ public abstract class Box {
         this.isPressed = isPressed;
         this.isCanMove = isCanMove;
         this.isFirstMove = isFirstMove;
+    }
+
+    public void setColor(BoxColor color) {
+        this.color = color;
+    }
+
+    public BoxColor getColor() {
+        return color;
     }
 
     public abstract void draw(Graphics g, int size, int x, int y);
@@ -58,8 +67,15 @@ public abstract class Box {
     }
 
     public static void addOut(Box box) {
-        outList = Arrays.copyOf(outList, outList.length + 1);
-        outList[outList.length - 1] = box;
+        outList.add(box);
+    }
+
+    public static void removeLastOut() {
+        outList.removeLast();
+    }
+
+    public static void removeOut(Box box) {
+        outList.remove(box);
     }
 
     /* TODO: STATIC */
@@ -152,8 +168,24 @@ public abstract class Box {
         }
 
         if (hover != null && pressed != null && hover.isCanMove && (hover.getClass() == Empty.class || hover.team != pressed.team)) {
-            if (hover.getClass() != Empty.class) addOut(hover);
-            if (pressed.getClass() == Pawn.class && (hPos.y == 0 || hPos.y == 7)) System.out.println("Find end");
+            boolean isAdded = false;
+            if (hover.getClass() != Empty.class) {
+                hover.isCanMove = false;
+                hover.isHover = false;
+
+                addOut(hover);
+                isAdded = true;
+            }
+            if (pressed.getClass() == Pawn.class && (hPos.y == 0 || hPos.y == 7)) {
+                for (int i = 0; i < outList.size(); i++) {
+                    if (outList.get(i).team == pressed.team && outList.get(i).getClass() != Pawn.class) {
+                        outList.get(i).isCanMove = true;
+                        canChange = new Point(hPos.x, hPos.y);
+                    }
+                }
+
+                System.out.println("Find end");
+            }
 
             Box saveHover = boxes[hPos.y][hPos.x];
             Box savePressed = boxes[pPos.y][pPos.x];
@@ -177,6 +209,7 @@ public abstract class Box {
                             boxes[pPos.y][pPos.x] = box;
 
                             GameView.teamTurn = GameView.teamTurn == BLACK ? WHITE : BLACK;
+                            if (isAdded) removeLastOut();
                         }
                     }
                 }
